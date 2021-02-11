@@ -1,0 +1,22 @@
+{
+  "name": "nodejs_api_sample",
+  "version": "1.0.0",
+  "description": "REST API super simples para aprendizado, fornecerá alguns dados à uma aplicação node/express web.",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon ./server.js"
+  },
+  "author": "Leonardo T.S.",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "express": "^4.17.1",
+    "morgan": "^1.10.0",
+    "mysql2": "^2.2.5",
+    "sequelize": "^6.5.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.7"
+  }
+}
