@@ -8,18 +8,25 @@
 
     const db = require('./configs/database');   // Importação da conexão com o Banco de Dados MySQL via ORM Sequelize.
 
+    const checkAuth = require('./api/middlewares/check-auth');  // Middleware - Utiliza o módulo "jsonwebtoken" para verificar em cada requisição se uma rota possui restrições de acesso e se o Token de Acesso está presente nos Headers e é válido.
+
 // Conexão com o Banco de Dados MySQL.
     db.connection;  // Instância da conexão atual.
     // db.checkConnection();   // Verificação da conexão.
 
 // Importação dos grupos de rotas.
     const rotaPessoas = require('./api/routes/pessoas');
+    const rotaClientes = require('./api/routes/clientes');
 
-// Middlewares.
+// Configurações de Ambiente
+    process.env.JWT_KEY = 'SenhaSecretaDoJWTdaRESTAPI';     // Será útilizada no router "clientes";
+
+// Middlewares. -- Atenção na ordem de uso dos Middlewares. Eles são pequenas etapas que serão executadas antes do seu tratamento da requisição (Tratamento final, realizado pelos Controllers).
+
     app.use(logger('dev'));     // Em todas as requisições, Morgan fará a análise e entregará dados sobre ela no console do servidor, por fim passará a requisição adiante.
 
-    app.use(bodyParser.urlencoded({ extended: false }));    // Se false, não receberá "rich data" (Textos RTF???).
-    app.use(bodyParser.json());                             // Extrai os campos da requisição no formato JSON.
+    // app.use(reqLimiter);
+        // As requisições de cada IP serão monitoradas e possuirão um limite de requisições por minuto.
 
     app.use((req, res, next) => {      // Configuração CORS - Note que esse Middleware não enviará a resposta, apenas ajustará algumas configurações, para que quando a resposta seja de fato enviada, ela vá com tais configurações.
 
@@ -44,8 +51,18 @@
 
     });
 
+    app.use(checkAuth); 
+        // Atenção, se o token for enviado junto com o Body da requisição, o middleware de verificação deve ficar após os analisadores de requisições (como por exemplo o Multer, ou o próprio body-parser), se não a aplicação não receberá os tokens, afinal eles não foram "convertidos" para o formato de leitura.
+        // Porém o modo mais comum de se passar o Token de Autenticação é por meio dos Request Headers, assim pode-se verificar o Token antes mesmo de analisar os dados do request.
+
+    app.use(bodyParser.urlencoded({ extended: false }));    // Se false, não receberá "rich data" (Textos RTF???).
+    app.use(bodyParser.json());                             // Extrai os campos da requisição no formato JSON.
+
+
 // Rotas que vão gerenciar as requisições.
     app.use('/pessoas', rotaPessoas);   // [ localhost:3000/pessoas/ ] - Tudo que acontece nessa rota será tratado em [ ./api/routes/pessoas.js ].
+
+    app.use('/clientes', rotaClientes);
 
 // Middlewares Gerenciadores de Erros.
 
@@ -60,6 +77,8 @@
 
     // Se alguma requisição respondeu com um erro, trataremos esse erro de forma personalizada. (Express errorHandling)
     app.use((error, req, res, next) => {    // Perceba: Middleware com 4 parâmetros, o 1º sendo "error".
+
+        console.error('Um erro inesperado ocorreu!\n', error);
 
         res.status(error.status || 500);    // Se o erro gerado, não apresentar um código de status http, use 500 - (Internal Server Error).
 
